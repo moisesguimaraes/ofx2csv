@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -51,7 +52,7 @@ def main():
     locale.setlocale(locale.LC_ALL, conf.locale)
 
     if conf.output_file:
-        output_file = open(conf.output_file, "w")
+        output_file = codecs.open(conf.output_file, 'w', 'utf-8')
     else:
         output_file = sys.stdout
 
