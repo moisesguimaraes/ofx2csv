@@ -17,47 +17,24 @@ from datetime import datetime
 from decimal import Decimal
 import locale
 
+from config import register_opts
+
+from babel.numbers import format_currency
 from ofxparse import OfxParser
 from oslo_config import cfg
 
-_default = [
-    cfg.StrOpt("file", required=True),
-    cfg.StrOpt("locale", default="en_US"),
-    cfg.MultiStrOpt("column_name"),
-]
 
-_column_names = [
-    cfg.StrOpt("type", help="TRNTYPE"),
-    cfg.StrOpt("date", help="DTPOSTED"),
-    cfg.StrOpt("amount", help="TRNAMT"),
-    cfg.StrOpt("id", help="FITID"),
-    cfg.StrOpt("memo", help="MEMO"),
-]
-
-_type_datetime = [
-    cfg.StrOpt("fmt"),
-]
-
-_type_currency = [
-    cfg.StrOpt("symbol"),
-]
-
-
-def format_row(conf, r):
+def format_row(conf, row, currency):
     formatted = []
 
-    if not hasattr(conf.type_currency, "fmt"):
-        conf.type_currency.fmt = conf.type_currency.symbol + "{:n}"
-
-    for item in r:
-        if isinstance(item, datetime):
-            fmt = conf.type_datetime.fmt
-        elif isinstance(item, Decimal):
-            fmt = conf.type_currency.fmt
+    for value in row:
+        if isinstance(value, datetime):
+            formatted.append(conf.type_datetime.fmt.format(value))
+        elif isinstance(value, Decimal):
+            formatted.append(format_currency(value, currency, 
+                                             locale=conf.locale))
         else:
-            fmt = "{}"
-
-        formatted.append(fmt.format(item))
+            formatted.append(value)
 
     return formatted
 
@@ -65,24 +42,27 @@ def format_row(conf, r):
 def main():
     conf = cfg.ConfigOpts()
 
-    conf.register_opts(_default)
-    conf.register_opts(_column_names, "column_names")
-    conf.register_opts(_type_datetime, "type_datetime")
-    conf.register_opts(_type_currency, "type_currency")
+    register_opts(conf)
 
     conf(default_config_dirs=["etc"])
 
     locale.setlocale(locale.LC_ALL, conf.locale)
 
-    with codecs.open(conf.file, encoding="utf-8") as f:
-        ofx = OfxParser.parse(f)
+    with codecs.open(conf.file, encoding=conf.encoding) as f:
+        try:
+            ofx = OfxParser.parse(f)
+        except Exception as e:
+            import sys
+            raise type(e)(
+                      str(e) + ' parsing file %s' % conf.file
+                  ).with_traceback(sys.exc_info()[2])
 
-        print(",".join([conf.column_names[n] for n in conf.column_name]))
+        print(",".join([conf.column_names[n] for n in conf.columns]))
 
         for transaction in ofx.account.statement.transactions:
-            trn = [transaction.__getattribute__(c) for c in conf.column_name]
+            trn = [transaction.__getattribute__(c) for c in conf.columns]
 
-            print(",".join(format_row(conf, trn)))
+            print(",".join(format_row(conf, trn, ofx.account.curdef)))
 
 
 if __name__ == "__main__":
