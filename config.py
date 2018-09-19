@@ -16,21 +16,32 @@ _cli_opts = [
     cfg.StrOpt("encoding",
                short="e",
                default="utf-8",
-               help="Input file encoding."
-                    "E.g. 'utf-8' or 'latin-1'."),
+               help="Input file encoding.\n"
+                    "E.g.: 'utf-8' or 'latin-1'."),
 
-    cfg.StrOpt("file",
+    cfg.StrOpt("csv_dialect",
+               short="d",
+               default="unix",
+               choices=["excel", "excel-tab", "unix"],
+               help="CSV dialect of output."),
+
+    cfg.StrOpt("locale",
+               short="l",
+               default="en_US",
+               help="Localization for number formatting.\n"
+                    "E.g.: en_US -> 1,000.00, pt_BR -> 1.000,00"),
+
+    cfg.StrOpt("input_file",
                help="Input OFX file to be converted to CSV.",
                required=True,
                positional=True),
+
+    cfg.StrOpt("output_file",
+               short="o",
+               help="Output CSV file converted from OFX."),
 ]
 
 _default_opts = [
-    cfg.StrOpt("locale",
-               default="en_US",
-               help="Localization for number formatting."
-                    "E.g.: en_US -> 1,000.00, pt_BR -> 1.000,00"),
-
     cfg.ListOpt("columns",
                 default=["id", "date", "type", "memo", "amount"],
                 help="Column names in the first row of the output."),

@@ -13,9 +13,11 @@
 # under the License.
 
 import codecs
+import csv
 from datetime import datetime
 from decimal import Decimal
 import locale
+import sys
 
 from config import register_opts
 
@@ -48,21 +50,27 @@ def main():
 
     locale.setlocale(locale.LC_ALL, conf.locale)
 
-    with codecs.open(conf.file, encoding=conf.encoding) as f:
+    if conf.output_file:
+        output_file = open(conf.output_file, "w")
+    else:
+        output_file = sys.stdout
+
+    writer = csv.writer(output_file, conf.csv_dialect)
+
+    with codecs.open(conf.input_file, encoding=conf.encoding) as f:
         try:
             ofx = OfxParser.parse(f)
         except Exception as e:
-            import sys
             raise type(e)(
                       str(e) + ' parsing file %s' % conf.file
                   ).with_traceback(sys.exc_info()[2])
 
-        print(",".join([conf.column_names[n] for n in conf.columns]))
+        writer.writerow([conf.column_names[n] for n in conf.columns])
 
         for transaction in ofx.account.statement.transactions:
             trn = [transaction.__getattribute__(c) for c in conf.columns]
 
-            print(",".join(format_row(conf, trn, ofx.account.curdef)))
+            writer.writerow(format_row(conf, trn, ofx.account.curdef))
 
 
 if __name__ == "__main__":

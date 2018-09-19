@@ -12,4 +12,4 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-for f in $1*.ofx; do ./ofx2csv.py $2 $f > ${f%.ofx}.csv; done
+for f in $1*.ofx; do ./ofx2csv.py $2 -o ${f%.ofx}.csv $f; done
