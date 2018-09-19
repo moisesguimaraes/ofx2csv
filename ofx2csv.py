@@ -31,7 +31,7 @@ def format_row(conf, row, currency):
         if isinstance(value, datetime):
             formatted.append(conf.type_datetime.fmt.format(value))
         elif isinstance(value, Decimal):
-            formatted.append(format_currency(value, currency, 
+            formatted.append(format_currency(value, currency,
                                              locale=conf.locale))
         else:
             formatted.append(value)
